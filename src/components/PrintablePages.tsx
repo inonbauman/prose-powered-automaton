@@ -28,7 +28,9 @@ const PrintablePages = forwardRef<HTMLDivElement, PrintablePagesProps>(
                   />
                 )}
               </div>
-              <p className="text-lg font-bold mt-1">משלוח עבור: {delivery.name}</p>
+              <div className="mt-2 p-2 border-2 border-black bg-gray-100">
+                <p className="text-lg font-bold">משלוח עבור: {delivery.name}</p>
+              </div>
             </div>
             
             {/* Content */}
