@@ -4,10 +4,11 @@ import { Package } from "lucide-react";
 
 interface PrintablePagesProps {
   deliveries: DeliveryData[];
+  logo?: string | null;
 }
 
 const PrintablePages = forwardRef<HTMLDivElement, PrintablePagesProps>(
-  ({ deliveries }, ref) => {
+  ({ deliveries, logo }, ref) => {
     return (
       <div ref={ref}>
         {deliveries.map((delivery, index) => (
@@ -18,9 +19,18 @@ const PrintablePages = forwardRef<HTMLDivElement, PrintablePagesProps>(
           >
             {/* Header */}
             <div className="delivery-header px-4 py-3 text-white">
-              <div className="flex items-center gap-2">
-                <Package className="w-5 h-5" />
-                <span className="text-sm font-medium">משלוח עבור</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Package className="w-5 h-5" />
+                  <span className="text-sm font-medium">משלוח עבור</span>
+                </div>
+                {logo && (
+                  <img 
+                    src={logo} 
+                    alt="לוגו" 
+                    className="h-8 w-auto object-contain bg-white/90 rounded px-2 py-1"
+                  />
+                )}
               </div>
               <h2 className="text-xl font-bold mt-1">{delivery.name}</h2>
             </div>

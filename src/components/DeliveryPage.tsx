@@ -6,16 +6,26 @@ interface DeliveryPageProps {
   city: string;
   phone: string;
   additionalInfo?: string;
+  logo?: string | null;
 }
 
-const DeliveryPage = ({ name, address, city, phone, additionalInfo }: DeliveryPageProps) => {
+const DeliveryPage = ({ name, address, city, phone, additionalInfo, logo }: DeliveryPageProps) => {
   return (
     <div className="delivery-page flex flex-col rounded-lg overflow-hidden shadow-lg animate-scale-in">
       {/* Header */}
       <div className="delivery-header px-4 py-3 text-primary-foreground">
-        <div className="flex items-center gap-2">
-          <Package className="w-5 h-5" />
-          <span className="text-sm font-medium">משלוח עבור</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Package className="w-5 h-5" />
+            <span className="text-sm font-medium">משלוח עבור</span>
+          </div>
+          {logo && (
+            <img 
+              src={logo} 
+              alt="לוגו" 
+              className="h-8 w-auto object-contain bg-white/90 rounded px-2 py-1"
+            />
+          )}
         </div>
         <h2 className="text-xl font-bold mt-1 truncate">{name}</h2>
       </div>
