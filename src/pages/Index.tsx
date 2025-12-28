@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { parseDeliveries, DeliveryData } from "@/utils/parseDeliveries";
 import DeliveryPage from "@/components/DeliveryPage";
 import PrintablePages from "@/components/PrintablePages";
-import { Printer, Trash2, FileText, Package, AlertTriangle } from "lucide-react";
+import { Printer, Trash2, FileText, Package, AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
 import ecosuppLogo from "@/assets/ecosupp-logo.png";
 
@@ -62,6 +62,11 @@ const Index = () => {
     setInputText("");
     setDeliveries([]);
     toast.info("הנתונים נוקו");
+  };
+
+  const handleDeleteDelivery = (index: number) => {
+    setDeliveries(prev => prev.filter((_, i) => i !== index));
+    toast.success("המשלוח נמחק");
   };
 
   const handlePrint = useReactToPrint({
@@ -169,7 +174,16 @@ const Index = () => {
                 
                 <div className="grid gap-6 max-h-[600px] overflow-y-auto p-2">
                   {deliveries.map((delivery, index) => (
-                    <DeliveryPage key={index} {...delivery} logo={ecosuppLogo} />
+                    <div key={index} className="relative group">
+                      <button
+                        onClick={() => handleDeleteDelivery(index)}
+                        className="absolute -top-2 -right-2 z-10 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
+                        title="מחק משלוח"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <DeliveryPage {...delivery} logo={ecosuppLogo} />
+                    </div>
                   ))}
                 </div>
               </div>
