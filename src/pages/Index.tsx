@@ -123,8 +123,8 @@ const Index = () => {
         </div>
       </main>
 
-      {/* Hidden printable area */}
-      <div className="hidden print:block">
+      {/* Printable area - visually hidden but rendered */}
+      <div className="fixed left-[-9999px] top-0 print:static print:left-0">
         <PrintablePages ref={printRef} deliveries={deliveries} />
       </div>
     </div>
