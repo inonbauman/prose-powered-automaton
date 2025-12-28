@@ -1,18 +1,50 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useReactToPrint } from "react-to-print";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { parseDeliveries, DeliveryData } from "@/utils/parseDeliveries";
 import DeliveryPage from "@/components/DeliveryPage";
 import PrintablePages from "@/components/PrintablePages";
-import { Printer, Trash2, FileText, Package } from "lucide-react";
+import { Printer, Trash2, FileText, Package, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import ecosuppLogo from "@/assets/ecosupp-logo.png";
+
+interface DuplicateGroup {
+  name: string;
+  phone: string;
+  indices: number[];
+}
 
 const Index = () => {
   const [inputText, setInputText] = useState("");
   const [deliveries, setDeliveries] = useState<DeliveryData[]>([]);
   const printRef = useRef<HTMLDivElement>(null);
+
+  // Find duplicates (same name AND phone)
+  const duplicates = useMemo(() => {
+    const groups: Map<string, number[]> = new Map();
+    
+    deliveries.forEach((delivery, index) => {
+      const key = `${delivery.name.trim().toLowerCase()}|${delivery.phone.replace(/\D/g, '')}`;
+      const existing = groups.get(key) || [];
+      existing.push(index + 1);
+      groups.set(key, existing);
+    });
+
+    const duplicateGroups: DuplicateGroup[] = [];
+    groups.forEach((indices, key) => {
+      if (indices.length > 1) {
+        const [name, phone] = key.split('|');
+        duplicateGroups.push({ 
+          name: deliveries[indices[0] - 1].name, 
+          phone: deliveries[indices[0] - 1].phone, 
+          indices 
+        });
+      }
+    });
+
+    return duplicateGroups;
+  }, [deliveries]);
 
   const handleParse = () => {
     const parsed = parseDeliveries(inputText);
@@ -114,10 +146,32 @@ const Index = () => {
                 <p className="text-muted-foreground">הדבק טקסט משלוחים ולחץ על "צור תוויות"</p>
               </div>
             ) : (
-              <div className="grid gap-6 max-h-[600px] overflow-y-auto p-2">
-                {deliveries.map((delivery, index) => (
-                  <DeliveryPage key={index} {...delivery} logo={ecosuppLogo} />
-                ))}
+              <div className="space-y-4">
+                {/* Duplicates Warning */}
+                {duplicates.length > 0 && (
+                  <div className="bg-destructive/10 border-2 border-destructive rounded-lg p-4">
+                    <div className="flex items-center gap-2 text-destructive font-bold mb-2">
+                      <AlertTriangle className="w-5 h-5" />
+                      <span>אזהרה: נמצאו משלוחים כפולים!</span>
+                    </div>
+                    <ul className="space-y-1 text-sm">
+                      {duplicates.map((dup, i) => (
+                        <li key={i} className="text-destructive">
+                          <strong>{dup.name}</strong> ({dup.phone}) - מופיע במשלוחים: {dup.indices.join(', ')}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      כדאי לבדוק שאלו לא הזמנות כפולות. ההדפסה תמשיך כרגיל.
+                    </p>
+                  </div>
+                )}
+                
+                <div className="grid gap-6 max-h-[600px] overflow-y-auto p-2">
+                  {deliveries.map((delivery, index) => (
+                    <DeliveryPage key={index} {...delivery} logo={ecosuppLogo} />
+                  ))}
+                </div>
               </div>
             )}
           </section>
