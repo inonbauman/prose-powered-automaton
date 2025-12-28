@@ -22,7 +22,9 @@ const DeliveryPage = ({ name, address, city, phone, additionalInfo, logo }: Deli
             />
           )}
         </div>
-        <p className="text-lg font-bold mt-1 text-foreground">משלוח עבור: {name}</p>
+        <div className="mt-2 p-2 border-2 border-foreground bg-muted/30">
+          <p className="text-lg font-bold text-foreground">משלוח עבור: {name}</p>
+        </div>
       </div>
       
       {/* Content */}
