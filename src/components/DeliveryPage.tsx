@@ -18,7 +18,7 @@ const DeliveryPage = ({ name, address, city, phone, additionalInfo, logo }: Deli
             <img 
               src={logo} 
               alt="לוגו" 
-              className="h-10 w-auto object-contain"
+              className="h-10 w-auto object-contain grayscale contrast-200 brightness-50"
             />
           )}
         </div>

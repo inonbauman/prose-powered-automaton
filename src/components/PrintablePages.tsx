@@ -24,7 +24,7 @@ const PrintablePages = forwardRef<HTMLDivElement, PrintablePagesProps>(
                   <img 
                     src={logo} 
                     alt="לוגו" 
-                    className="h-10 w-auto object-contain"
+                    className="h-10 w-auto object-contain grayscale contrast-200 brightness-50"
                   />
                 )}
               </div>
