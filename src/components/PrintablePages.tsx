@@ -1,6 +1,5 @@
 import { forwardRef } from "react";
 import { DeliveryData } from "@/utils/parseDeliveries";
-import { Package } from "lucide-react";
 
 interface PrintablePagesProps {
   deliveries: DeliveryData[];
@@ -14,45 +13,42 @@ const PrintablePages = forwardRef<HTMLDivElement, PrintablePagesProps>(
         {deliveries.map((delivery, index) => (
           <div 
             key={index} 
-            className="delivery-page flex flex-col overflow-hidden"
+            className="delivery-page flex flex-col overflow-hidden border-2 border-black"
             style={{ pageBreakAfter: 'always' }}
           >
             {/* Header */}
-            <div className="delivery-header px-4 py-3 text-white">
+            <div className="px-4 py-3 bg-white border-b-2 border-black">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Package className="w-5 h-5" />
-                  <span className="text-sm font-medium">משלוח עבור</span>
-                </div>
+                <h1 className="text-2xl font-black">חישלחויות</h1>
                 {logo && (
                   <img 
                     src={logo} 
                     alt="לוגו" 
-                    className="h-8 w-auto object-contain bg-white/90 rounded px-2 py-1"
+                    className="h-10 w-auto object-contain"
                   />
                 )}
               </div>
-              <h2 className="text-xl font-bold mt-1">{delivery.name}</h2>
+              <p className="text-lg font-bold mt-1">משלוח עבור: {delivery.name}</p>
             </div>
             
             {/* Content */}
             <div className="flex-1 p-4 flex flex-col justify-between bg-white">
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div>
-                  <p className="text-xs text-gray-500 font-medium mb-1">כתובת</p>
-                  <p className="text-sm font-semibold leading-relaxed">{delivery.address}</p>
-                  <p className="text-sm text-gray-600">{delivery.city}</p>
+                  <p className="text-sm font-bold mb-1">כתובת:</p>
+                  <p className="text-lg font-semibold leading-relaxed">{delivery.address}</p>
+                  <p className="text-lg">{delivery.city}</p>
                 </div>
                 
                 <div>
-                  <p className="text-xs text-gray-500 font-medium mb-1">טלפון</p>
-                  <p className="text-base font-bold tracking-wide" dir="ltr">{delivery.phone}</p>
+                  <p className="text-sm font-bold mb-1">טלפון:</p>
+                  <p className="text-xl font-black tracking-wide" dir="ltr">{delivery.phone}</p>
                 </div>
               </div>
               
               {delivery.additionalInfo && (
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-xs text-gray-500 leading-relaxed">{delivery.additionalInfo}</p>
+                <div className="mt-3 pt-3 border-t-2 border-black">
+                  <p className="text-sm leading-relaxed">{delivery.additionalInfo}</p>
                 </div>
               )}
             </div>
