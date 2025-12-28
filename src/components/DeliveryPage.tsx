@@ -1,5 +1,3 @@
-import { Package } from "lucide-react";
-
 interface DeliveryPageProps {
   name: string;
   address: string;
@@ -11,46 +9,43 @@ interface DeliveryPageProps {
 
 const DeliveryPage = ({ name, address, city, phone, additionalInfo, logo }: DeliveryPageProps) => {
   return (
-    <div className="delivery-page flex flex-col rounded-lg overflow-hidden shadow-lg animate-scale-in">
+    <div className="delivery-page flex flex-col rounded-lg overflow-hidden shadow-lg animate-scale-in border-2 border-foreground bg-card">
       {/* Header */}
-      <div className="delivery-header px-4 py-3 text-primary-foreground">
+      <div className="px-4 py-3 bg-card border-b-2 border-foreground">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Package className="w-5 h-5" />
-            <span className="text-sm font-medium">משלוח עבור</span>
-          </div>
+          <h1 className="text-2xl font-black text-foreground">חישלחויות</h1>
           {logo && (
             <img 
               src={logo} 
               alt="לוגו" 
-              className="h-8 w-auto object-contain bg-white/90 rounded px-2 py-1"
+              className="h-10 w-auto object-contain"
             />
           )}
         </div>
-        <h2 className="text-xl font-bold mt-1 truncate">{name}</h2>
+        <p className="text-lg font-bold mt-1 text-foreground">משלוח עבור: {name}</p>
       </div>
       
       {/* Content */}
       <div className="flex-1 p-4 flex flex-col justify-between">
-        <div className="space-y-3">
+        <div className="space-y-4">
           {/* Address */}
           <div>
-            <p className="text-xs text-muted-foreground font-medium mb-1">כתובת</p>
-            <p className="text-sm font-semibold leading-relaxed">{address}</p>
-            <p className="text-sm text-muted-foreground">{city}</p>
+            <p className="text-sm font-bold mb-1 text-foreground">כתובת:</p>
+            <p className="text-lg font-semibold leading-relaxed text-foreground">{address}</p>
+            <p className="text-lg text-foreground">{city}</p>
           </div>
           
           {/* Phone */}
           <div>
-            <p className="text-xs text-muted-foreground font-medium mb-1">טלפון</p>
-            <p className="text-base font-bold tracking-wide" dir="ltr">{phone}</p>
+            <p className="text-sm font-bold mb-1 text-foreground">טלפון:</p>
+            <p className="text-xl font-black tracking-wide text-foreground" dir="ltr">{phone}</p>
           </div>
         </div>
         
         {/* Additional Info */}
         {additionalInfo && (
-          <div className="mt-3 pt-3 border-t border-border">
-            <p className="text-xs text-muted-foreground leading-relaxed">{additionalInfo}</p>
+          <div className="mt-3 pt-3 border-t-2 border-foreground">
+            <p className="text-sm text-foreground leading-relaxed">{additionalInfo}</p>
           </div>
         )}
       </div>

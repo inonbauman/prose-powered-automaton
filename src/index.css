@@ -113,8 +113,8 @@
   .delivery-page {
     width: 4in;
     height: 4in;
-    background: hsl(var(--page-bg));
-    border: 2px solid hsl(var(--page-border));
+    background: white;
+    color: black;
     page-break-after: always;
     page-break-inside: avoid;
   }
