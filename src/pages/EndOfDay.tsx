@@ -210,10 +210,12 @@ const EndOfDay = () => {
     const today = new Date().toLocaleDateString("he-IL");
     const dayName = new Date().toLocaleDateString("he-IL", { weekday: "long" });
     
-    // Summary row
+    // Summary row - reversed order: day, date on right; count formula, label on left
+    // Using formula placeholder - will calculate based on paste location
+    const numRows = parsedData.length;
     const summaryRow = {
       "ברקוד": `סה"כ משלוחים`,
-      "טלפון": parsedData.length.toString(),
+      "טלפון": { f: `COUNTA(A3:A${numRows + 2})` }, // Formula for count
       "כתובת יעד": "",
       "שם יעד": "",
       "תאריך יצירה": today,
@@ -248,8 +250,13 @@ const EndOfDay = () => {
     const today = new Date().toLocaleDateString("he-IL");
     const dayName = new Date().toLocaleDateString("he-IL", { weekday: "long" });
     
-    // Summary row
-    const summaryRow = [`סה"כ משלוחים`, parsedData.length.toString(), "", "", today, dayName];
+    // Summary row - reversed: day, date on right; formula placeholder, label on left
+    // The formula uses ROW() to calculate dynamically based on paste location
+    const numRows = parsedData.length;
+    const countFormula = `=COUNTA(A(ROW()+2):A(ROW()+${numRows + 1}))`;
+    // Simpler relative formula that works when pasted
+    const simpleFormula = `=COUNTA(INDIRECT("A"&ROW()+2&":A"&ROW()+${numRows + 1}))`;
+    const summaryRow = [`סה"כ משלוחים`, simpleFormula, "", "", today, dayName];
     
     const headers = ["ברקוד", "טלפון", "כתובת יעד", "שם יעד", "תאריך יצירה", "מס' משלוח"];
     const rows = parsedData.map((row) => [
