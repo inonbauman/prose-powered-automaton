@@ -1,9 +1,11 @@
-import { ArrowRight, Package, Truck, Upload, CheckCircle, AlertCircle } from "lucide-react";
+import { ArrowRight, Package, Truck, Upload, CheckCircle, AlertCircle, Download, Copy, FileUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useToast } from "@/hooks/use-toast";
+import * as XLSX from "xlsx";
 import {
   Table,
   TableBody,
@@ -27,6 +29,8 @@ type CompanyType = "special" | "aliexpress" | null;
 
 const EndOfDay = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedCompany, setSelectedCompany] = useState<CompanyType>(null);
   const [rawData, setRawData] = useState("");
   const [parsedData, setParsedData] = useState<DeliveryRow[]>([]);
@@ -38,13 +42,11 @@ const EndOfDay = () => {
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      // Split by tab
       const columns = line.split("\t");
       
       if (columns.length < 13) continue;
 
       // Special Delivery columns: A(0), F(5), H(7), J(9), K(10), M(12)
-      // A = מספר הזמנה, F = תאריך הזמנה, H = כתובת יעד, J = נמען, K = טלפון נמען, M = ברקוד
       const row: DeliveryRow = {
         orderNumber: columns[0]?.trim() || "",
         orderDate: columns[5]?.trim() || "",
@@ -55,7 +57,6 @@ const EndOfDay = () => {
         quantity: columns[13]?.trim() || "1",
       };
 
-      // Skip header rows or empty rows
       if (row.orderNumber && row.orderNumber !== "מספר הזמנה" && row.recipient) {
         results.push(row);
       }
@@ -74,8 +75,6 @@ const EndOfDay = () => {
       
       if (columns.length < 10) continue;
 
-      // AliExpress - based on the image, columns appear to be:
-      // מס' משלוח, תאריך יצירה, שם יעד, עיר יעד, כתובת יעד מלאה, טלפון
       const row: DeliveryRow = {
         orderNumber: columns[0]?.trim() || "",
         orderDate: columns[1]?.trim() || "",
@@ -86,13 +85,88 @@ const EndOfDay = () => {
         quantity: columns[7]?.trim() || "1",
       };
 
-      // Skip header rows or empty rows
       if (row.orderNumber && !row.orderNumber.includes("משלוח") && row.recipient) {
         results.push(row);
       }
     }
 
     return results;
+  };
+
+  const parseFromExcelData = (data: string[][]) => {
+    const results: DeliveryRow[] = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const columns = data[i];
+      
+      if (selectedCompany === "special") {
+        if (columns.length < 13) continue;
+        
+        const row: DeliveryRow = {
+          orderNumber: columns[0]?.toString().trim() || "",
+          orderDate: columns[5]?.toString().trim() || "",
+          destinationAddress: columns[7]?.toString().trim() || "",
+          recipient: columns[9]?.toString().trim() || "",
+          recipientPhone: columns[10]?.toString().trim() || "",
+          barcode: columns[12]?.toString().trim() || "",
+          quantity: columns[13]?.toString().trim() || "1",
+        };
+
+        if (row.orderNumber && row.orderNumber !== "מספר הזמנה" && row.recipient) {
+          results.push(row);
+        }
+      } else if (selectedCompany === "aliexpress") {
+        if (columns.length < 10) continue;
+
+        const row: DeliveryRow = {
+          orderNumber: columns[0]?.toString().trim() || "",
+          orderDate: columns[1]?.toString().trim() || "",
+          recipient: columns[2]?.toString().trim() || "",
+          destinationAddress: `${columns[4]?.toString().trim() || ""}, ${columns[3]?.toString().trim() || ""}`,
+          recipientPhone: columns[5]?.toString().trim() || "",
+          barcode: columns[6]?.toString().trim() || "",
+          quantity: columns[7]?.toString().trim() || "1",
+        };
+
+        if (row.orderNumber && !row.orderNumber.includes("משלוח") && row.recipient) {
+          results.push(row);
+        }
+      }
+    }
+
+    return results;
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][];
+        
+        const parsed = parseFromExcelData(jsonData);
+        setParsedData(parsed);
+        setIsProcessed(true);
+        
+        toast({
+          title: "הקובץ נטען בהצלחה",
+          description: `נמצאו ${parsed.length} משלוחים`,
+        });
+      } catch (error) {
+        toast({
+          title: "שגיאה בטעינת הקובץ",
+          description: "אנא ודא שהקובץ בפורמט Excel תקין",
+          variant: "destructive",
+        });
+      }
+    };
+    reader.readAsArrayBuffer(file);
   };
 
   const handleProcess = () => {
@@ -115,6 +189,9 @@ const EndOfDay = () => {
     setRawData("");
     setParsedData([]);
     setIsProcessed(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const handleBack = () => {
@@ -127,6 +204,52 @@ const EndOfDay = () => {
     } else {
       navigate("/");
     }
+  };
+
+  const handleDownloadExcel = () => {
+    const exportData = parsedData.map((row, index) => ({
+      "#": index + 1,
+      "מס' הזמנה": row.orderNumber,
+      "תאריך": row.orderDate,
+      "נמען": row.recipient,
+      "כתובת": row.destinationAddress,
+      "טלפון": row.recipientPhone,
+      "ברקוד": row.barcode,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "משלוחים");
+    
+    const companyName = selectedCompany === "special" ? "ספיישל" : "אלי_אקספרס";
+    const date = new Date().toLocaleDateString("he-IL").replace(/\./g, "-");
+    XLSX.writeFile(workbook, `בדיקת_משלוחים_${companyName}_${date}.xlsx`);
+
+    toast({
+      title: "הקובץ הורד בהצלחה",
+    });
+  };
+
+  const handleCopyToClipboard = () => {
+    const headers = ["#", "מס' הזמנה", "תאריך", "נמען", "כתובת", "טלפון", "ברקוד"];
+    const rows = parsedData.map((row, index) => [
+      index + 1,
+      row.orderNumber,
+      row.orderDate,
+      row.recipient,
+      row.destinationAddress,
+      row.recipientPhone,
+      row.barcode,
+    ]);
+
+    const text = [headers.join("\t"), ...rows.map(r => r.join("\t"))].join("\n");
+    
+    navigator.clipboard.writeText(text).then(() => {
+      toast({
+        title: "הועתק ללוח",
+        description: "הנתונים הועתקו בהצלחה",
+      });
+    });
   };
 
   return (
@@ -188,25 +311,56 @@ const EndOfDay = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Upload className="w-5 h-5" />
-                  הדבק נתונים מאקסל
+                  הזנת נתונים
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  {selectedCompany === "special" && (
-                    <>העתק והדבק את הנתונים מהאקסל. העמודות הנדרשות: מספר הזמנה, תאריך הזמנה, כתובת יעד, נמען, טלפון נמען, ברקוד</>
-                  )}
-                  {selectedCompany === "aliexpress" && (
-                    <>העתק והדבק את הנתונים מהאקסל של אלי אקספרס</>
-                  )}
-                </p>
-                <Textarea
-                  placeholder="הדבק כאן את הנתונים מהאקסל..."
-                  value={rawData}
-                  onChange={(e) => setRawData(e.target.value)}
-                  className="min-h-[300px] font-mono text-sm"
-                  dir="ltr"
-                />
+              <CardContent className="space-y-6">
+                {/* File Upload */}
+                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept=".xlsx,.xls,.csv"
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label htmlFor="file-upload" className="cursor-pointer">
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                      <FileUp className="w-6 h-6 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-medium mb-1">העלה קובץ Excel</p>
+                    <p className="text-xs text-muted-foreground">או גרור קובץ לכאן</p>
+                  </label>
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">או הדבק נתונים</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    {selectedCompany === "special" && (
+                      <>העתק והדבק את הנתונים מהאקסל. העמודות הנדרשות: A, F, H, J, K, M</>
+                    )}
+                    {selectedCompany === "aliexpress" && (
+                      <>העתק והדבק את הנתונים מהאקסל של אלי אקספרס</>
+                    )}
+                  </p>
+                  <Textarea
+                    placeholder="הדבק כאן את הנתונים מהאקסל..."
+                    value={rawData}
+                    onChange={(e) => setRawData(e.target.value)}
+                    className="min-h-[200px] font-mono text-sm"
+                    dir="ltr"
+                  />
+                </div>
+
                 <div className="flex gap-3">
                   <Button onClick={handleProcess} disabled={!rawData.trim()}>
                     <CheckCircle className="w-4 h-4 ml-2" />
@@ -224,7 +378,7 @@ const EndOfDay = () => {
         {/* Results Table */}
         {isProcessed && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
                   <CheckCircle className="w-5 h-5 text-green-500" />
@@ -236,9 +390,19 @@ const EndOfDay = () => {
                   </p>
                 </div>
               </div>
-              <Button variant="outline" onClick={handleReset}>
-                התחל מחדש
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleCopyToClipboard}>
+                  <Copy className="w-4 h-4 ml-2" />
+                  העתק
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleDownloadExcel}>
+                  <Download className="w-4 h-4 ml-2" />
+                  הורד Excel
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleReset}>
+                  התחל מחדש
+                </Button>
+              </div>
             </div>
 
             {parsedData.length === 0 ? (
