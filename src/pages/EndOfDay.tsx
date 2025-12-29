@@ -145,14 +145,29 @@ const EndOfDay = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const fileName = file.name.toLowerCase();
+    const isCSV = fileName.endsWith('.csv');
+
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: "array" });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][];
+        let jsonData: string[][];
+
+        if (isCSV) {
+          // Handle CSV files (including UTF-16 encoded)
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: "array", codepage: 65001 });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][];
+        } else {
+          // Handle Excel files
+          const data = new Uint8Array(e.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: "array" });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][];
+        }
         
         const parsed = parseFromExcelData(jsonData);
         setParsedData(parsed);
@@ -163,9 +178,10 @@ const EndOfDay = () => {
           description: `נמצאו ${parsed.length} משלוחים`,
         });
       } catch (error) {
+        console.error("File parse error:", error);
         toast({
           title: "שגיאה בטעינת הקובץ",
-          description: "אנא ודא שהקובץ בפורמט Excel תקין",
+          description: "אנא ודא שהקובץ בפורמט Excel או CSV תקין",
           variant: "destructive",
         });
       }
