@@ -148,45 +148,82 @@ const EndOfDay = () => {
     const fileName = file.name.toLowerCase();
     const isCSV = fileName.endsWith('.csv');
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        let jsonData: string[][];
+    if (isCSV) {
+      // For CSV files, try to detect encoding and read as text first
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const arrayBuffer = e.target?.result as ArrayBuffer;
+          const bytes = new Uint8Array(arrayBuffer);
+          
+          // Check for UTF-16 LE BOM (FF FE)
+          let text: string;
+          if (bytes[0] === 0xFF && bytes[1] === 0xFE) {
+            // UTF-16 LE
+            const decoder = new TextDecoder('utf-16le');
+            text = decoder.decode(arrayBuffer);
+          } else if (bytes[0] === 0xFE && bytes[1] === 0xFF) {
+            // UTF-16 BE
+            const decoder = new TextDecoder('utf-16be');
+            text = decoder.decode(arrayBuffer);
+          } else {
+            // Try UTF-8
+            const decoder = new TextDecoder('utf-8');
+            text = decoder.decode(arrayBuffer);
+          }
 
-        if (isCSV) {
-          // Handle CSV files (including UTF-16 encoded)
-          const data = new Uint8Array(e.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: "array", codepage: 65001 });
-          const sheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[sheetName];
-          jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][];
-        } else {
-          // Handle Excel files
+          // Parse CSV text - split by newlines and tabs
+          const lines = text.trim().split(/\r?\n/);
+          const jsonData: string[][] = lines.map(line => line.split('\t'));
+          
+          const parsed = parseFromExcelData(jsonData);
+          setParsedData(parsed);
+          setIsProcessed(true);
+          
+          toast({
+            title: "הקובץ נטען בהצלחה",
+            description: `נמצאו ${parsed.length} משלוחים`,
+          });
+        } catch (error) {
+          console.error("CSV parse error:", error);
+          toast({
+            title: "שגיאה בטעינת הקובץ",
+            description: "אנא ודא שהקובץ בפורמט CSV תקין",
+            variant: "destructive",
+          });
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      // Handle Excel files
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
           const workbook = XLSX.read(data, { type: "array" });
           const sheetName = workbook.SheetNames[0];
           const worksheet = workbook.Sheets[sheetName];
-          jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as string[][];
+          
+          const parsed = parseFromExcelData(jsonData);
+          setParsedData(parsed);
+          setIsProcessed(true);
+          
+          toast({
+            title: "הקובץ נטען בהצלחה",
+            description: `נמצאו ${parsed.length} משלוחים`,
+          });
+        } catch (error) {
+          console.error("Excel parse error:", error);
+          toast({
+            title: "שגיאה בטעינת הקובץ",
+            description: "אנא ודא שהקובץ בפורמט Excel תקין",
+            variant: "destructive",
+          });
         }
-        
-        const parsed = parseFromExcelData(jsonData);
-        setParsedData(parsed);
-        setIsProcessed(true);
-        
-        toast({
-          title: "הקובץ נטען בהצלחה",
-          description: `נמצאו ${parsed.length} משלוחים`,
-        });
-      } catch (error) {
-        console.error("File parse error:", error);
-        toast({
-          title: "שגיאה בטעינת הקובץ",
-          description: "אנא ודא שהקובץ בפורמט Excel או CSV תקין",
-          variant: "destructive",
-        });
-      }
-    };
-    reader.readAsArrayBuffer(file);
+      };
+      reader.readAsArrayBuffer(file);
+    }
   };
 
   const handleProcess = () => {
