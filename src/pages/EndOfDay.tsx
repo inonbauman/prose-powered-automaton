@@ -207,7 +207,20 @@ const EndOfDay = () => {
   };
 
   const handleDownloadExcel = () => {
-    const exportData = parsedData.map((row) => ({
+    const today = new Date().toLocaleDateString("he-IL");
+    const dayName = new Date().toLocaleDateString("he-IL", { weekday: "long" });
+    
+    // Summary row
+    const summaryRow = {
+      "ברקוד": `סה"כ משלוחים`,
+      "טלפון": parsedData.length.toString(),
+      "כתובת יעד": "",
+      "שם יעד": "",
+      "תאריך יצירה": today,
+      "מס' משלוח": dayName,
+    };
+
+    const dataRows = parsedData.map((row) => ({
       "ברקוד": row.barcode,
       "טלפון": row.recipientPhone,
       "כתובת יעד": row.destinationAddress,
@@ -215,6 +228,8 @@ const EndOfDay = () => {
       "תאריך יצירה": row.orderDate,
       "מס' משלוח": row.orderNumber,
     }));
+
+    const exportData = [summaryRow, ...dataRows];
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
@@ -230,6 +245,12 @@ const EndOfDay = () => {
   };
 
   const handleCopyToClipboard = () => {
+    const today = new Date().toLocaleDateString("he-IL");
+    const dayName = new Date().toLocaleDateString("he-IL", { weekday: "long" });
+    
+    // Summary row
+    const summaryRow = [`סה"כ משלוחים`, parsedData.length.toString(), "", "", today, dayName];
+    
     const headers = ["ברקוד", "טלפון", "כתובת יעד", "שם יעד", "תאריך יצירה", "מס' משלוח"];
     const rows = parsedData.map((row) => [
       row.barcode,
@@ -240,7 +261,7 @@ const EndOfDay = () => {
       row.orderNumber,
     ]);
 
-    const text = [headers.join("\t"), ...rows.map(r => r.join("\t"))].join("\n");
+    const text = [summaryRow.join("\t"), headers.join("\t"), ...rows.map(r => r.join("\t"))].join("\n");
     
     navigator.clipboard.writeText(text).then(() => {
       toast({
