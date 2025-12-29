@@ -73,18 +73,29 @@ const EndOfDay = () => {
       const line = lines[i];
       const columns = line.split("\t");
       
-      if (columns.length < 20) continue;
+      if (columns.length < 5) continue;
 
-      // AliExpress - after deletions, remaining columns are from original indices:
-      // 2 = מס' משלוח, 4 = תאריך קליטה, 10 = לקוח יעד, 11 = כתובת יעד, 12 = יישוב יעד, 19 = סטטוס
+      // AliExpress columns:
+      // 0 = מס' משלוח, 1 = תאריך קליטה, 2 = לקוח יעד:טלפון, 3 = כתובת יעד, 4 = יישוב יעד, 5 = מספר חבילות, 6 = סטטוס
+      const customerField = columns[2]?.trim() || "";
+      // Split customer field by ":" to get name and phone
+      const lastColonIndex = customerField.lastIndexOf(":");
+      let recipientName = customerField;
+      let phone = "";
+      
+      if (lastColonIndex > 0) {
+        recipientName = customerField.substring(0, lastColonIndex).trim();
+        phone = customerField.substring(lastColonIndex + 1).trim();
+      }
+
       const row: DeliveryRow = {
-        orderNumber: columns[2]?.trim() || "",
-        orderDate: columns[4]?.trim() || "",
-        recipient: columns[10]?.trim() || "",
-        destinationAddress: `${columns[11]?.trim() || ""}, ${columns[12]?.trim() || ""}`,
-        recipientPhone: "", // לא קיים בנתוני אלי אקספרס
+        orderNumber: columns[0]?.trim() || "",
+        orderDate: columns[1]?.trim() || "",
+        recipient: recipientName,
+        destinationAddress: `${columns[3]?.trim() || ""}, ${columns[4]?.trim() || ""}`,
+        recipientPhone: phone,
         barcode: "", // לא קיים בנתוני אלי אקספרס
-        quantity: "1",
+        quantity: columns[5]?.trim() || "1",
       };
 
       // Skip header rows or empty rows
@@ -119,17 +130,27 @@ const EndOfDay = () => {
           results.push(row);
         }
       } else if (selectedCompany === "aliexpress") {
-        if (columns.length < 20) continue;
+        if (columns.length < 5) continue;
 
-        // AliExpress - original indices: 2, 4, 10, 11, 12, 19
+        // AliExpress: 0=מס' משלוח, 1=תאריך, 2=לקוח:טלפון, 3=כתובת, 4=עיר, 5=כמות
+        const customerField = columns[2]?.toString().trim() || "";
+        const lastColonIndex = customerField.lastIndexOf(":");
+        let recipientName = customerField;
+        let phone = "";
+        
+        if (lastColonIndex > 0) {
+          recipientName = customerField.substring(0, lastColonIndex).trim();
+          phone = customerField.substring(lastColonIndex + 1).trim();
+        }
+
         const row: DeliveryRow = {
-          orderNumber: columns[2]?.toString().trim() || "",
-          orderDate: columns[4]?.toString().trim() || "",
-          recipient: columns[10]?.toString().trim() || "",
-          destinationAddress: `${columns[11]?.toString().trim() || ""}, ${columns[12]?.toString().trim() || ""}`,
-          recipientPhone: "",
+          orderNumber: columns[0]?.toString().trim() || "",
+          orderDate: columns[1]?.toString().trim() || "",
+          recipient: recipientName,
+          destinationAddress: `${columns[3]?.toString().trim() || ""}, ${columns[4]?.toString().trim() || ""}`,
+          recipientPhone: phone,
           barcode: "",
-          quantity: "1",
+          quantity: columns[5]?.toString().trim() || "1",
         };
 
         if (row.orderNumber && !row.orderNumber.includes("משלוח") && row.recipient) {
