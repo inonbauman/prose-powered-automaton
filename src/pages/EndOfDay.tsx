@@ -207,14 +207,13 @@ const EndOfDay = () => {
   };
 
   const handleDownloadExcel = () => {
-    const exportData = parsedData.map((row, index) => ({
-      "#": index + 1,
-      "מס' הזמנה": row.orderNumber,
-      "תאריך": row.orderDate,
-      "נמען": row.recipient,
-      "כתובת": row.destinationAddress,
-      "טלפון": row.recipientPhone,
+    const exportData = parsedData.map((row) => ({
       "ברקוד": row.barcode,
+      "טלפון": row.recipientPhone,
+      "כתובת יעד": row.destinationAddress,
+      "שם יעד": row.recipient,
+      "תאריך יצירה": row.orderDate,
+      "מס' משלוח": row.orderNumber,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -231,15 +230,14 @@ const EndOfDay = () => {
   };
 
   const handleCopyToClipboard = () => {
-    const headers = ["#", "מס' הזמנה", "תאריך", "נמען", "כתובת", "טלפון", "ברקוד"];
-    const rows = parsedData.map((row, index) => [
-      index + 1,
-      row.orderNumber,
-      row.orderDate,
-      row.recipient,
-      row.destinationAddress,
-      row.recipientPhone,
+    const headers = ["ברקוד", "טלפון", "כתובת יעד", "שם יעד", "תאריך יצירה", "מס' משלוח"];
+    const rows = parsedData.map((row) => [
       row.barcode,
+      row.recipientPhone,
+      row.destinationAddress,
+      row.recipient,
+      row.orderDate,
+      row.orderNumber,
     ]);
 
     const text = [headers.join("\t"), ...rows.map(r => r.join("\t"))].join("\n");
