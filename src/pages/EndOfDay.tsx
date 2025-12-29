@@ -73,18 +73,21 @@ const EndOfDay = () => {
       const line = lines[i];
       const columns = line.split("\t");
       
-      if (columns.length < 10) continue;
+      if (columns.length < 20) continue;
 
+      // AliExpress - after deletions, remaining columns are from original indices:
+      // 2 = מס' משלוח, 4 = תאריך קליטה, 10 = לקוח יעד, 11 = כתובת יעד, 12 = יישוב יעד, 19 = סטטוס
       const row: DeliveryRow = {
-        orderNumber: columns[0]?.trim() || "",
-        orderDate: columns[1]?.trim() || "",
-        recipient: columns[2]?.trim() || "",
-        destinationAddress: `${columns[4]?.trim() || ""}, ${columns[3]?.trim() || ""}`,
-        recipientPhone: columns[5]?.trim() || "",
-        barcode: columns[6]?.trim() || "",
-        quantity: columns[7]?.trim() || "1",
+        orderNumber: columns[2]?.trim() || "",
+        orderDate: columns[4]?.trim() || "",
+        recipient: columns[10]?.trim() || "",
+        destinationAddress: `${columns[11]?.trim() || ""}, ${columns[12]?.trim() || ""}`,
+        recipientPhone: "", // לא קיים בנתוני אלי אקספרס
+        barcode: "", // לא קיים בנתוני אלי אקספרס
+        quantity: "1",
       };
 
+      // Skip header rows or empty rows
       if (row.orderNumber && !row.orderNumber.includes("משלוח") && row.recipient) {
         results.push(row);
       }
@@ -116,16 +119,17 @@ const EndOfDay = () => {
           results.push(row);
         }
       } else if (selectedCompany === "aliexpress") {
-        if (columns.length < 10) continue;
+        if (columns.length < 20) continue;
 
+        // AliExpress - original indices: 2, 4, 10, 11, 12, 19
         const row: DeliveryRow = {
-          orderNumber: columns[0]?.toString().trim() || "",
-          orderDate: columns[1]?.toString().trim() || "",
-          recipient: columns[2]?.toString().trim() || "",
-          destinationAddress: `${columns[4]?.toString().trim() || ""}, ${columns[3]?.toString().trim() || ""}`,
-          recipientPhone: columns[5]?.toString().trim() || "",
-          barcode: columns[6]?.toString().trim() || "",
-          quantity: columns[7]?.toString().trim() || "1",
+          orderNumber: columns[2]?.toString().trim() || "",
+          orderDate: columns[4]?.toString().trim() || "",
+          recipient: columns[10]?.toString().trim() || "",
+          destinationAddress: `${columns[11]?.toString().trim() || ""}, ${columns[12]?.toString().trim() || ""}`,
+          recipientPhone: "",
+          barcode: "",
+          quantity: "1",
         };
 
         if (row.orderNumber && !row.orderNumber.includes("משלוח") && row.recipient) {
